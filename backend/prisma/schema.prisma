@@ -1,0 +1,282 @@
+// =============================================================================
+// BLOCK 1: GENERATOR
+// =============================================================================
+// This tells Prisma what to generate when you run `prisma generate`.
+// "prisma-client-js" means: generate a TypeScript/JavaScript client
+// that you can import in your code to query the database.
+// Output: node_modules/@prisma/client
+// =============================================================================
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =============================================================================
+// BLOCK 2: DATASOURCE
+// =============================================================================
+// This tells Prisma which database provider to use (postgresql, mysql, sqlite).
+//
+// IMPORTANT — Prisma v7 Breaking Change:
+//   In Prisma v7+, the `url` property was REMOVED from schema.prisma.
+//   The connection URL now lives exclusively in prisma.config.ts.
+//   Your prisma.config.ts already handles this:
+//     datasource: { url: process.env["DATABASE_URL"] }
+// =============================================================================
+datasource db {
+  provider = "postgresql"
+}
+
+
+// =============================================================================
+// ENUM: OrganizationStatus
+// =============================================================================
+// An Enum is a field type that can only hold one of a fixed set of values.
+//
+// WHY USE ENUM instead of a plain String?
+//   - A String column accepts ANY value: "active", "Active", "ACTIVE", "actve"
+//     (including typos). An Enum enforces only valid values at the DB level.
+//   - PostgreSQL creates an actual ENUM type in the database.
+//     SQL: CREATE TYPE "OrganizationStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
+//   - Your TypeScript code gets autocompletion: OrganizationStatus.ACTIVE
+//
+// WHEN TO USE ENUM: Whenever a field has a small, known, fixed set of values.
+// =============================================================================
+enum OrganizationStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// =============================================================================
+// MODEL: Organization
+// =============================================================================
+// A "model" in Prisma = a table in PostgreSQL.
+// Prisma convention: model names are PascalCase (singular).
+// PostgreSQL convention: table names are snake_case (plural).
+// @@map("organizations") bridges this gap.
+// =============================================================================
+model Organization {
+  // --------------------------------------------------------------------------
+  // id: Primary Key
+  // @id         -> marks this as the PRIMARY KEY constraint in PostgreSQL
+  // @default(uuid()) -> Prisma auto-generates a UUID v4 before inserting.
+  //                    Generated in the application layer, not by PostgreSQL.
+  // String type -> maps to TEXT in PostgreSQL
+  // --------------------------------------------------------------------------
+  id String @id @default(uuid())
+
+  // --------------------------------------------------------------------------
+  // name: Organization display name
+  // Plain String with no modifiers = NOT NULL in PostgreSQL
+  // --------------------------------------------------------------------------
+  name String
+
+  // --------------------------------------------------------------------------
+  // slug: URL-safe unique identifier for tenant routing (e.g. app.com/acme-corp)
+  // @unique -> PostgreSQL creates a UNIQUE INDEX on this column
+  // --------------------------------------------------------------------------
+  slug String @unique
+
+  // --------------------------------------------------------------------------
+  // email: Primary contact email for the organization
+  // @unique -> no two organizations can share the same email
+  // --------------------------------------------------------------------------
+  email String @unique
+
+  // --------------------------------------------------------------------------
+  // phone: Optional contact number
+  // String? -> the ? makes this field NULLABLE in PostgreSQL
+  // Prisma Client will type this as: string | null
+  // --------------------------------------------------------------------------
+  phone String?
+
+  // --------------------------------------------------------------------------
+  // status: The lifecycle state of the organization
+  // OrganizationStatus -> uses our Enum defined above
+  // @default(ACTIVE) -> new organizations start as ACTIVE
+  // --------------------------------------------------------------------------
+  status OrganizationStatus @default(ACTIVE)
+
+  // --------------------------------------------------------------------------
+  // Audit timestamps
+  // @default(now()) -> PostgreSQL equivalent: DEFAULT NOW()
+  // @updatedAt -> Prisma automatically sets this to NOW() on every UPDATE
+  //              No DB trigger needed. Prisma handles it in application layer.
+  // @map("created_at") -> Prisma field is camelCase (TS convention)
+  //                       PostgreSQL column is snake_case (SQL convention)
+  // --------------------------------------------------------------------------
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // --------------------------------------------------------------------------
+  // RELATION FIELDS (virtual — these create NO columns in PostgreSQL)
+  // These are navigation helpers for Prisma Client queries.
+  // Role[] means: "from an Organization, I can access all its Roles"
+  // User[] means: "from an Organization, I can access all its Users"
+  // --------------------------------------------------------------------------
+  roles Role[]
+  users User[]
+
+  // --------------------------------------------------------------------------
+  // @@map: Maps this Prisma model name to the PostgreSQL table name
+  // Without this: table would be named "Organization" (capital O)
+  // With this:    table is named "organizations" (proper SQL convention)
+  // --------------------------------------------------------------------------
+  @@map("organizations")
+}
+
+// =============================================================================
+// MODEL: Role
+// =============================================================================
+model Role {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  // --------------------------------------------------------------------------
+  // isActive: Soft-disable a role without deleting it
+  // @default(true) -> new roles are active by default
+  // @map("is_active") -> PostgreSQL column name will be "is_active"
+  // --------------------------------------------------------------------------
+  isActive Boolean @default(true) @map("is_active")
+
+  // --------------------------------------------------------------------------
+  // organizationId: Foreign Key to Organization
+  // String type -> stores the UUID of the parent Organization
+  // @map("organization_id") -> PostgreSQL column name
+  // --------------------------------------------------------------------------
+  organizationId String @map("organization_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // --------------------------------------------------------------------------
+  // RELATION: Role belongs to one Organization
+  // @relation(
+  //   fields: [organizationId]   <- the FK field on THIS model
+  //   references: [id]           <- the PK field on the OTHER model
+  // )
+  // This creates: FOREIGN KEY (organization_id) REFERENCES organizations(id)
+  // --------------------------------------------------------------------------
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  // --------------------------------------------------------------------------
+  // RELATION: Role has many UserRole rows
+  // Virtual field — enables: prisma.role.findUnique({ include: { userRoles: true } })
+  // --------------------------------------------------------------------------
+  userRoles UserRole[]
+
+  // --------------------------------------------------------------------------
+  // @@unique([name, organizationId]): COMPOSITE UNIQUE constraint
+  //
+  // What it means:
+  //   - Two roles CAN share the same name IF they belong to DIFFERENT organizations
+  //   - Two roles CANNOT share the same name within the SAME organization
+  //
+  // Example:
+  //   org-A: "Admin" + org-B: "Admin"  -> OK, different orgs
+  //   org-A: "Admin" + org-A: "Admin"  -> BLOCKED, same org
+  //
+  // PostgreSQL SQL: UNIQUE (name, organization_id)
+  // --------------------------------------------------------------------------
+  @@unique([name, organizationId])
+
+  // --------------------------------------------------------------------------
+  // @@index([organizationId]): B-Tree index on the FK column
+  // Without this: "get all roles for org X" = full table scan
+  // With this:    PostgreSQL jumps directly to matching rows
+  // Rule: Always index your foreign key columns.
+  // --------------------------------------------------------------------------
+  @@index([organizationId])
+
+  @@map("roles")
+}
+
+// =============================================================================
+// MODEL: User
+// =============================================================================
+model User {
+  id String @id @default(uuid())
+
+  // @map("full_name") -> PostgreSQL column: "full_name"
+  fullName String @map("full_name")
+
+  // email must be globally unique across ALL users in ALL organizations
+  email String @unique
+
+  // password: stores a bcrypt hash, never plain text
+  // Plain String = NOT NULL, no default -> must always be provided on insert
+  password String
+
+  isActive Boolean @default(true) @map("is_active")
+
+  // --------------------------------------------------------------------------
+  // organizationId: The multi-tenancy anchor on the User record.
+  // Every query should filter by this to ensure tenant data isolation.
+  // --------------------------------------------------------------------------
+  organizationId String @map("organization_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // --------------------------------------------------------------------------
+  // RELATIONS
+  // --------------------------------------------------------------------------
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  // userRoles: The join table connecting this user to their roles
+  // A user can have ZERO or more UserRole records
+  userRoles UserRole[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+// =============================================================================
+// MODEL: UserRole (Join Table)
+// =============================================================================
+// This is the bridge table implementing the many-to-many between Users and Roles.
+//
+// WHY a dedicated model instead of a hidden join table?
+//   - We can add metadata to the relationship itself (e.g., assignedAt)
+//   - We can query UserRole directly ("when was this role assigned?")
+//   - We can add more fields later (assigned_by, expires_at, etc.)
+//
+// HOW IT WORKS:
+//   User(id=U1) -> UserRole(user_id=U1, role_id=R1) <- Role(id=R1)
+//   User(id=U1) -> UserRole(user_id=U1, role_id=R2) <- Role(id=R2)
+//   Now user U1 has roles R1 AND R2.
+// =============================================================================
+model UserRole {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  // --------------------------------------------------------------------------
+  // assignedAt: When was this role given to this user?
+  // Metadata on the RELATIONSHIP itself — impossible with a simple FK column.
+  // --------------------------------------------------------------------------
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  // --------------------------------------------------------------------------
+  // RELATIONS: Both sides of the join
+  // --------------------------------------------------------------------------
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  // --------------------------------------------------------------------------
+  // @@unique([userId, roleId]):
+  // Prevents assigning the SAME role to the SAME user twice.
+  // Without this, you could insert duplicate UserRole rows — meaningless data.
+  // --------------------------------------------------------------------------
+  @@unique([userId, roleId])
+
+  // Index on userId  -> fast lookup: "get all roles for user X"
+  @@index([userId])
+
+  // Index on roleId  -> fast lookup: "get all users with role X"
+  @@index([roleId])
+
+  @@map("user_roles")
+}
+
