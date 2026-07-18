@@ -7,19 +7,12 @@
 // Output: node_modules/@prisma/client
 // =============================================================================
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 // =============================================================================
 // BLOCK 2: DATASOURCE
-// =============================================================================
-// This tells Prisma which database provider to use (postgresql, mysql, sqlite).
-//
-// IMPORTANT — Prisma v7 Breaking Change:
-//   In Prisma v7+, the `url` property was REMOVED from schema.prisma.
-//   The connection URL now lives exclusively in prisma.config.ts.
-//   Your prisma.config.ts already handles this:
-//     datasource: { url: process.env["DATABASE_URL"] }
 // =============================================================================
 datasource db {
   provider = "postgresql"

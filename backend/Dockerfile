@@ -4,7 +4,8 @@ FROM node:22-alpine
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install dependencies
+# Install dependencies and OpenSSL for Prisma
+RUN apk add --no-cache openssl
 COPY package*.json ./
 RUN npm install
 

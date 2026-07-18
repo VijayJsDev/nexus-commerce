@@ -100,3 +100,8 @@ Ecommerce-SAAS-App/
 │
 └── docker-compose.yml        # Orchestrates the containers
 ```
+
+# Database Studio
+```bash
+npx prisma studio --port 5555
+```
