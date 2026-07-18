@@ -10,11 +10,12 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"]
-    }
+    },
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.spec.ts"]
