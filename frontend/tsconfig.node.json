@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+
+    // ─── Tooling Config (Vite, Vitest config files) ───────────────
+    // These config files are processed by Vite/Vitest as bundled ESM,
+    // not as real Node.js scripts. Using "bundler" moduleResolution
+    // aligns with how they are actually consumed and allows
+    // extensionless imports (matching the app tsconfig behaviour).
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    // ─── Strict ──────────────────────────────────────────────────
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+
+    // ─── TypeScript 6 Compatibility ──────────────────────────────
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["vite.config.ts", "vitest.config.ts"]
+}

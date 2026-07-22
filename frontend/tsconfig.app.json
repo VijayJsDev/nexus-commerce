@@ -1,0 +1,63 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    // ─── Output Target ───────────────────────────────────────────
+    // ES2022 gives us top-level await, class fields, Object.hasOwn, etc.
+    // Vite handles the final browser polyfilling — we don't need to target ES5.
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+
+    // ─── Module System ───────────────────────────────────────────
+    // "bundler" mode = Vite handles all imports. TS just validates types.
+    // allowImportingTsExtensions lets us write `import Foo from './Foo.tsx'`
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    // ─── React ───────────────────────────────────────────────────
+    // "react-jsx" = automatic JSX runtime. No `import React` needed in every file.
+    "jsx": "react-jsx",
+
+    // ─── Type Sources ────────────────────────────────────────────
+    "types": ["vite/client"],
+
+    // ─── Path Aliases ────────────────────────────────────────────
+    // "@/*" mirrors the Vite alias in vite.config.ts.
+    // Both must stay in sync — TS validates types, Vite resolves at runtime.
+    // Note: baseUrl is deprecated in TS6. Paths work without it in bundler mode.
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    // ─── Strict Type Safety ──────────────────────────────────────
+    // "strict" enables: strictNullChecks, noImplicitAny, strictFunctionTypes,
+    // strictBindCallApply, strictPropertyInitialization, useUnknownInCatchVariables
+    "strict": true,
+
+    // Array/object index access returns T | undefined — prevents silent crashes:
+    //   const arr = [1,2,3]; arr[99].toString() ← TS error without this flag
+    "noUncheckedIndexedAccess": true,
+
+    // Catch dead code and unused variables at compile time
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Prevents erasable-only TS syntax (enums, namespaces) for cleaner output
+    "erasableSyntaxOnly": true,
+
+    // ─── Interop ─────────────────────────────────────────────────
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+
+    // ─── TypeScript 6 Compatibility ──────────────────────────────
+    // Suppress TS6 deprecation warnings for APIs not yet removed.
+    // Remove when migrating to TS7.
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src"]
+}

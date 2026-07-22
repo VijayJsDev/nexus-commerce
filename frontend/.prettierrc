@@ -1,0 +1,14 @@
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "printWidth": 80,
+  "tabWidth": 2,
+
+  "plugins": ["prettier-plugin-tailwindcss"],
+
+  // Required for Tailwind v4 — points to the CSS file containing @theme config.
+  // In v4, Prettier reads design tokens from CSS instead of tailwind.config.js.
+  // This lets prettier-plugin-tailwindcss sort classes in the correct order.
+  "tailwindStylesheet": "./src/index.css"
+}

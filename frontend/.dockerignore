@@ -1,0 +1,24 @@
+# Ignore host node_modules — container installs its own
+node_modules/
+
+# Build artifacts (not needed in Docker image for dev stage)
+dist/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Coverage
+coverage/
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log

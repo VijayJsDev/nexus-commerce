@@ -1,0 +1,10 @@
+{
+  // Root tsconfig — references both app source and node/vite tooling configs.
+  // Using "composite + references" lets tsc type-check both slices independently
+  // and enables incremental builds via .tsbuildinfo caches.
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
