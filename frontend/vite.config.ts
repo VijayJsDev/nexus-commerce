@@ -44,6 +44,12 @@ export default defineConfig({
     // reachable on 127.0.0.1 inside the container — the host can't reach it.
     host: true,
 
+    // Required for Docker on Windows/WSL2: forces Vite to poll files
+    // so changes on the Windows host filesystem trigger HMR inside Linux container.
+    watch: {
+      usePolling: true,
+    },
+
     // ─── API Proxy ──────────────────────────────────────────────
     // In development, Vite forwards any request starting with /api to the
     // backend at localhost:5000. This means:
