@@ -18,24 +18,24 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Node.js / Express Backend ──────────────────────────────────
+  # ─── .NET 10 / ASP.NET Core Backend ─────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: saas_backend
     ports:
-      - "5000:5000"
+      # Host 5000 → Container 8080 (ASP.NET Core default port inside Docker)
+      - "5000:8080"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-saas_commerce}?schema=public
-      - PORT=5000
-      - NODE_ENV=development
+      # Override the environment to Development so appsettings.Development.json is loaded
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Connection string — overrides the value in appsettings.Development.json
+      # "postgres" below is the Docker service name, used as hostname inside the network
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-saas_commerce};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-password}
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./backend:/usr/src/app
-      - /usr/src/app/node_modules
     restart: unless-stopped
 
   # ─── React / Vite Frontend ──────────────────────────────────────
