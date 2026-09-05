@@ -51,7 +51,7 @@ services:
       - "3000:3000"
     environment:
       # Backend URL inside Docker network (service name as hostname)
-      - VITE_API_URL=http://backend:5000
+      - VITE_API_URL=http://backend:8080
       - VITE_APP_NAME=Nexus Commerce
     volumes:
       # Mount source for hot-module replacement (file changes reflect instantly)

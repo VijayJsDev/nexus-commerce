@@ -1,0 +1,6 @@
+.carousel-images {
+    display: flex;
+    align-items: center;
+    height: fit-content;
+    height: 80vw;
+}
