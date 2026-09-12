@@ -23,6 +23,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ROUTES } from './routes';
 import { Header } from '@/components/ui/Header';
 import { HeroCarousel } from '@/components/ui/HeroCarousel';
+import { ProductHorizontalScrolling } from '@/components/ui/ProductHorizontalScrolling';
 
 // ─── Placeholder Root Component ───────────────────────────────────
 // Renders a minimal themed page that proves the entire stack is wired:
@@ -36,6 +37,8 @@ function RootPage(): React.JSX.Element {
   return (
     <div>
       <Header />
+      <HeroCarousel />
+      <ProductHorizontalScrolling />
       <HeroCarousel />
     </div>
   );
