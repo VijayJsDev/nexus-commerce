@@ -37,7 +37,9 @@ const THEME_LABELS: Record<Theme, string> = {
 
 // ─── Component ───────────────────────────────────────────────────
 
-export function ThemeToggle({ className = '' }: ThemeToggleProps): React.JSX.Element {
+export function ThemeToggle({
+  className = '',
+}: ThemeToggleProps): React.JSX.Element {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -46,12 +48,7 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps): React.JSX.Ele
       <div
         role="group"
         aria-label="Theme selector"
-        className="
-          relative flex items-center gap-0.5
-          rounded-full border border-border
-          bg-card p-1 shadow-card
-          transition-all duration-200
-        "
+        className="border-border bg-card shadow-card relative flex items-center gap-0.5 rounded-full border p-1 transition-all duration-200"
       >
         {THEME_CYCLE.map((t) => {
           const isActive = theme === t;
@@ -64,31 +61,24 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps): React.JSX.Ele
               aria-label={`Switch to ${THEME_LABELS[t]} mode`}
               aria-pressed={isActive}
               onClick={() => setTheme(t)}
-              className={`
-                relative z-10 flex items-center justify-center
-                h-8 w-8 rounded-full
-                transition-all duration-300
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-ring focus-visible:ring-offset-1
-                ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                }
-              `}
+              className={`focus-visible:ring-ring relative z-10 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none ${
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              } `}
             >
               {t === 'light' && (
                 <Sun
                   size={15}
                   strokeWidth={isActive ? 2.5 : 1.8}
-                  className={`transition-transform duration-300 ${isActive ? 'rotate-0 scale-110' : ''}`}
+                  className={`transition-transform duration-300 ${isActive ? 'scale-110 rotate-0' : ''}`}
                 />
               )}
               {t === 'dark' && (
                 <Moon
                   size={14}
                   strokeWidth={isActive ? 2.5 : 1.8}
-                  className={`transition-transform duration-300 ${isActive ? '-rotate-12 scale-110' : ''}`}
+                  className={`transition-transform duration-300 ${isActive ? 'scale-110 -rotate-12' : ''}`}
                 />
               )}
               {t === 'system' && (
@@ -106,7 +96,7 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps): React.JSX.Ele
       {/* ── Current theme label ─────────────────────────────────── */}
       <span
         aria-live="polite"
-        className="text-xs font-medium text-muted-foreground tracking-wide select-none"
+        className="text-muted-foreground text-xs font-medium tracking-wide select-none"
       >
         {THEME_LABELS[theme]}
       </span>

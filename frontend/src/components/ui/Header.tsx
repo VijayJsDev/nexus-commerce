@@ -1,51 +1,169 @@
-import { SearchIcon, ShoppingBag, User } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
+import { SearchIcon, ShoppingBag, User } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
+import { cn } from '@/lib/utils';
 
-export function Header() {
-    return (
-        <header className="sticky top-0 z-50 w-full px-4 py-3 md:px-8 flex items-center justify-between bg-background/80 backdrop-blur-md text-foreground border-b border-border transition-colors">
-            <div>
-                <img src="faesthatic_corner_logo.jpg" width={50} height={10} />
-            </div>
-            <div>
-                <ul className="flex items-center gap-2 md:gap-4">
-                    {/* Search Button */}
-                    <li>
-                        <button
-                            type="button"
-                            aria-label="Search"
-                            className="orange p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <SearchIcon className="w-5 h-5" />
-                        </button>
-                    </li>
+// ─── Props ────────────────────────────────────────────────────────
 
-                    {/* User Account Button */}
-                    <li>
-                        <button
-                            type="button"
-                            aria-label="User Account"
-                            className="orange p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <User className="w-5 h-5" />
-                        </button>
-                    </li>
+export interface HeaderProps {
+  cartCount?: number;
+  isLoading?: boolean;
+  className?: string;
+  onSearchClick?: () => void;
+  onAccountClick?: () => void;
+  onCartClick?: () => void;
+}
 
-                    {/* Shopping Cart Button with Badge */}
-                    <li className="relative">
-                        <button
-                            type="button"
-                            aria-label="Cart"
-                            className="orange p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <ShoppingBag className="w-5 h-5" />
-                            <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full">
-                                2
-                            </span>
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        </header>
-    )
-};
+// ─── Skeleton Component ───────────────────────────────────────────
+
+export function HeaderSkeleton({
+  className,
+}: {
+  className?: string;
+}): React.JSX.Element {
+  return (
+    <header
+      aria-label="Loading header"
+      className={cn(
+        'bg-background/80 border-border sticky top-0 z-50 w-full border-b shadow-xs backdrop-blur-md',
+        className
+      )}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Brand placeholder */}
+        <div className="flex items-center gap-3">
+          <div className="bg-muted h-10 w-10 animate-pulse rounded-lg" />
+          <div className="bg-muted hidden h-5 w-32 animate-pulse rounded-md sm:block" />
+        </div>
+
+        {/* Actions placeholder */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="bg-muted h-9 w-9 animate-pulse rounded-full" />
+          <div className="bg-muted hidden h-9 w-24 animate-pulse rounded-full md:block" />
+          <div className="bg-muted h-9 w-9 animate-pulse rounded-full" />
+          <div className="bg-muted h-9 w-9 animate-pulse rounded-full" />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────
+
+export function Header({
+  cartCount = 2,
+  isLoading = false,
+  className,
+  onSearchClick,
+  onAccountClick,
+  onCartClick,
+}: HeaderProps): React.JSX.Element {
+  if (isLoading) {
+    return <HeaderSkeleton className={className} />;
+  }
+
+  return (
+    <header
+      className={cn(
+        'sticky top-0 z-50 w-full',
+        'bg-background/85 backdrop-blur-md',
+        'border-border border-b shadow-xs',
+        'transition-colors duration-200',
+        className
+      )}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        {/* ── Brand Logo & Title ──────────────────────────────────── */}
+        <div className="flex items-center gap-3">
+          <div className="border-border bg-card relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border shadow-xs">
+            <img
+              src="/faesthatic_corner_logo.jpg"
+              alt="Faesthatic Corner Logo"
+              width={40}
+              height={40}
+              className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+            />
+          </div>
+          <span className="text-foreground text-base font-bold tracking-tight select-none sm:text-lg">
+            Faesthatic Corner
+          </span>
+        </div>
+
+        {/* ── Navigation Actions ─────────────────────────────────── */}
+        <nav aria-label="Quick actions">
+          <ul className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* Search Button */}
+            <li>
+              <button
+                type="button"
+                aria-label="Search products"
+                onClick={onSearchClick}
+                className={cn(
+                  'text-muted-foreground rounded-full p-2 sm:p-2.5',
+                  'hover:text-foreground hover:bg-accent',
+                  'transition-all duration-200 ease-out active:scale-95',
+                  'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                )}
+              >
+                <SearchIcon className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </li>
+
+            {/* Theme Toggle Pill */}
+            <li className="hidden items-center sm:flex">
+              <ThemeToggle className="origin-right scale-85 [&>span]:hidden" />
+            </li>
+
+            {/* User Account Button */}
+            <li>
+              <button
+                type="button"
+                aria-label="User Account"
+                onClick={onAccountClick}
+                className={cn(
+                  'text-muted-foreground rounded-full p-2 sm:p-2.5',
+                  'hover:text-foreground hover:bg-accent',
+                  'transition-all duration-200 ease-out active:scale-95',
+                  'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                )}
+              >
+                <User className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </li>
+
+            {/* Shopping Cart Button with Badge */}
+            <li className="relative">
+              <button
+                type="button"
+                aria-label={`Shopping Cart with ${cartCount} items`}
+                onClick={onCartClick}
+                className={cn(
+                  'text-muted-foreground rounded-full p-2 sm:p-2.5',
+                  'hover:text-foreground hover:bg-accent',
+                  'transition-all duration-200 ease-out active:scale-95',
+                  'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                )}
+              >
+                <ShoppingBag className="h-5 w-5" aria-hidden="true" />
+                {cartCount > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'absolute -top-0.5 -right-0.5',
+                      'flex items-center justify-center',
+                      'h-[1.125rem] min-w-[1.125rem] px-1',
+                      'bg-primary text-primary-foreground rounded-full text-[10px] font-bold',
+                      'ring-background shadow-xs ring-2',
+                      'motion-safe:animate-in motion-safe:zoom-in-75 duration-200'
+                    )}
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+  );
+}

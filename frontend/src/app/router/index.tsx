@@ -19,7 +19,6 @@
  */
 
 import { createBrowserRouter } from 'react-router-dom';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { ROUTES } from './routes';
 import { Header } from '@/components/ui/Header';
 import { HeroCarousel } from '@/components/ui/HeroCarousel';
@@ -35,11 +34,13 @@ import { ProductHorizontalScrolling } from '@/components/ui/ProductHorizontalScr
 // eslint-disable-next-line react-refresh/only-export-components -- router file intentionally exports both component and config
 function RootPage(): React.JSX.Element {
   return (
-    <div>
+    <div className="bg-background text-foreground flex min-h-screen flex-col">
       <Header />
-      <HeroCarousel />
-      <ProductHorizontalScrolling />
-      <HeroCarousel />
+      <main className="flex-1 space-y-6 pb-12">
+        <HeroCarousel />
+        <ProductHorizontalScrolling />
+        <HeroCarousel />
+      </main>
     </div>
   );
 }
@@ -56,8 +57,8 @@ export const router = createBrowserRouter([
     // Catch-all: any unmatched URL shows a 404 page
     path: ROUTES.NOT_FOUND,
     element: (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
+      <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-3">
+        <h1 className="text-foreground text-7xl font-bold">404</h1>
         <p className="text-muted-foreground">Page not found</p>
       </div>
     ),
