@@ -52,7 +52,11 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error) => {
         // Don't retry on 4xx client errors — they won't resolve with retrying
         // (e.g., 401 Unauthorized, 403 Forbidden, 404 Not Found)
-        if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+        if (
+          error instanceof ApiError &&
+          error.status >= 400 &&
+          error.status < 500
+        ) {
           return false;
         }
         // Retry once for network errors and 5xx server errors
@@ -60,8 +64,7 @@ export const queryClient = new QueryClient({
       },
 
       // Exponential backoff: 1000ms, 2000ms (capped at 30s)
-      retryDelay: (attemptIndex) =>
-        Math.min(1000 * 2 ** attemptIndex, 30_000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30_000),
 
       // Disabled — prevents unexpected loading states in dashboard tabs
       refetchOnWindowFocus: false,

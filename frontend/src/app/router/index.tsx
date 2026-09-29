@@ -23,6 +23,7 @@ import { ROUTES } from './routes';
 import { Header } from '@/components/ui/Header';
 import { HeroCarousel } from '@/components/ui/HeroCarousel';
 import { ProductHorizontalScrolling } from '@/components/ui/ProductHorizontalScrolling';
+import { CheckoutPage } from '@/features/checkout/CheckoutPage';
 
 // ─── Placeholder Root Component ───────────────────────────────────
 // Renders a minimal themed page that proves the entire stack is wired:
@@ -52,6 +53,10 @@ export const router = createBrowserRouter([
     path: ROUTES.ROOT,
     element: <RootPage />,
     // errorElement: <ErrorBoundaryPage /> — add when building real pages
+  },
+  {
+    path: ROUTES.CHECKOUT,
+    element: <CheckoutPage />,
   },
   {
     // Catch-all: any unmatched URL shows a 404 page

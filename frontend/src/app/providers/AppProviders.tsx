@@ -39,7 +39,10 @@ export function AppProviders(): React.JSX.Element {
 
       {/* DevTools are tree-shaken out of production builds by Vite */}
       {isDev && (
-        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          buttonPosition="bottom-left"
+        />
       )}
     </QueryClientProvider>
   );

@@ -60,8 +60,6 @@ describe('Test infrastructure', () => {
         Submit
       </button>
     );
-    expect(
-      screen.getByRole('button', { name: /submit/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
   });
 });

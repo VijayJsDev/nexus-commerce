@@ -1,5 +1,7 @@
 import { SearchIcon, ShoppingBag, User } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { CartDrawer } from './CartDrawer';
+import { useCartStore } from '@/store/cart.store';
 import { cn } from '@/lib/utils';
 
 // ─── Props ────────────────────────────────────────────────────────
@@ -50,13 +52,21 @@ export function HeaderSkeleton({
 // ─── Main Component ───────────────────────────────────────────────
 
 export function Header({
-  cartCount = 2,
+  cartCount,
   isLoading = false,
   className,
   onSearchClick,
   onAccountClick,
   onCartClick,
 }: HeaderProps): React.JSX.Element {
+  const { totalCount, openCart } = useCartStore();
+  const effectiveCartCount = cartCount ?? totalCount();
+
+  const handleCartClick = (): void => {
+    onCartClick?.();
+    openCart();
+  };
+
   if (isLoading) {
     return <HeaderSkeleton className={className} />;
   }
@@ -134,8 +144,8 @@ export function Header({
             <li className="relative">
               <button
                 type="button"
-                aria-label={`Shopping Cart with ${cartCount} items`}
-                onClick={onCartClick}
+                aria-label={`Shopping Cart with ${effectiveCartCount} items`}
+                onClick={handleCartClick}
                 className={cn(
                   'text-muted-foreground rounded-full p-2 sm:p-2.5',
                   'hover:text-foreground hover:bg-accent',
@@ -144,7 +154,7 @@ export function Header({
                 )}
               >
                 <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-                {cartCount > 0 && (
+                {effectiveCartCount > 0 && (
                   <span
                     aria-hidden="true"
                     className={cn(
@@ -156,7 +166,7 @@ export function Header({
                       'motion-safe:animate-in motion-safe:zoom-in-75 duration-200'
                     )}
                   >
-                    {cartCount > 99 ? '99+' : cartCount}
+                    {effectiveCartCount > 99 ? '99+' : effectiveCartCount}
                   </span>
                 )}
               </button>
@@ -164,6 +174,9 @@ export function Header({
           </ul>
         </nav>
       </div>
+
+      {/* ── Slide-over Cart Drawer ───────────────────────────────── */}
+      <CartDrawer />
     </header>
   );
 }

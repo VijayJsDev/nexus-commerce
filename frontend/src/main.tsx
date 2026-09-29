@@ -24,7 +24,7 @@ if (rootElement === null) {
   // This should never happen if index.html has <div id="root">
   throw new Error(
     '[main.tsx] Root element #root not found in the document. ' +
-    'Check that index.html contains <div id="root"></div>.'
+      'Check that index.html contains <div id="root"></div>.'
   );
 }
 

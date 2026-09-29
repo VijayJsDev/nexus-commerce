@@ -76,9 +76,7 @@ apiClient.interceptors.response.use(
   (error: unknown) => {
     // Network error (no response at all — backend is down, user is offline)
     if (!axios.isAxiosError(error)) {
-      return Promise.reject(
-        new ApiError('An unexpected error occurred', 0)
-      );
+      return Promise.reject(new ApiError('An unexpected error occurred', 0));
     }
 
     const axiosError = error as AxiosError<ApiErrorResponse>;

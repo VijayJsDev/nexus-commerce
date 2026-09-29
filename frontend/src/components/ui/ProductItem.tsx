@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, ShoppingBag } from 'lucide-react';
+import { useCartStore } from '@/store/cart.store';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -60,6 +61,7 @@ export function ProductItem({
 }: ProductItemProps): React.JSX.Element {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const { addItem } = useCartStore();
 
   if (isLoading) {
     return <ProductItemSkeleton className={className} />;
@@ -67,6 +69,12 @@ export function ProductItem({
 
   const handleAddToCart = (): void => {
     setIsAdded(true);
+    addItem({
+      id: item.id,
+      name: item.name,
+      image: item.image,
+      amount: item.amount,
+    });
     onAddToCart?.(item);
     setTimeout(() => {
       setIsAdded(false);
