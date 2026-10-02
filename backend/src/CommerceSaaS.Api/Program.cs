@@ -11,6 +11,8 @@
 //   4. Configure the HTTP request pipeline (middleware order matters!)
 //   5. Run the application
 
+using CommerceSaaS.Infrastructure;
+
 // ──────────────────────────────────────────────────────────────────
 // SECTION 1: Builder Setup
 // WebApplication.CreateBuilder(args) reads:
@@ -32,6 +34,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Adds support for attribute-based routing and controller classes.
 // This is the equivalent of Express's "router" mechanism, but structured.
 builder.Services.AddControllers();
+
+// Register infrastructure services (Resend Email Service, Products & Orders Repositories)
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Read the allowed origins from appsettings.json "Cors:AllowedOrigins"
 var allowedOrigins = builder.Configuration

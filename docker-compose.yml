@@ -33,6 +33,10 @@ services:
       # Connection string — overrides the value in appsettings.Development.json
       # "postgres" below is the Docker service name, used as hostname inside the network
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-saas_commerce};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-password}
+      # Resend API Key and Super Admin notification email
+      - Resend__ApiKey=${RESEND_API_KEY:-}
+      - Resend__SuperAdminEmail=${SUPER_ADMIN_EMAIL:-kv077145@gmail.com}
+      - Resend__FromEmail=${RESEND_FROM_EMAIL:-onboarding@resend.dev}
     depends_on:
       postgres:
         condition: service_healthy
