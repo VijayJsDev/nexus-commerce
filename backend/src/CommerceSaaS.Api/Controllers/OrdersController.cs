@@ -45,6 +45,21 @@ public class OrdersController : ControllerBase
         return Ok(MapToDto(order));
     }
 
+    [HttpGet("test-email")]
+    public async Task<IActionResult> TestEmail([FromQuery] string? email)
+    {
+        var target = string.IsNullOrWhiteSpace(email) ? "kv077145@gmail.com" : email;
+        var (success, message, details) = await _emailService.TestEmailDeliveryAsync(target);
+        return Ok(new
+        {
+            success,
+            message,
+            details,
+            targetEmail = target,
+            timestamp = DateTime.UtcNow
+        });
+    }
+
     [HttpPost]
     public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderDto dto)
     {
