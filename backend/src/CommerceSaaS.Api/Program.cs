@@ -50,9 +50,19 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()      // Allow any request header (e.g., Authorization, Content-Type)
-              .AllowAnyMethod();     // Allow GET, POST, PUT, DELETE, PATCH, etc.
+        if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .SetIsOriginAllowed(_ => true) // Supports Vercel preview domains dynamically
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
 
@@ -106,6 +116,9 @@ app.UseCors("AllowFrontend");
 // ASP.NET Core will scan for classes with [ApiController] attribute
 // and register their [HttpGet], [HttpPost], etc. routes automatically.
 app.MapControllers();
+
+// Health check endpoint for cloud load balancers and platform monitors (Koyeb, Render, etc.)
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
 
 // ──────────────────────────────────────────────────────────────────
 // SECTION 5: Run
