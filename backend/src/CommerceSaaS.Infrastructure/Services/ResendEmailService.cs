@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using CommerceSaaS.Application.DTOs;
 using CommerceSaaS.Application.Interfaces;
@@ -10,6 +11,12 @@ namespace CommerceSaaS.Infrastructure.Services;
 
 public class ResendEmailService : IEmailService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ResendEmailService> _logger;
@@ -60,44 +67,36 @@ public class ResendEmailService : IEmailService
         return string.IsNullOrWhiteSpace(admin) ? "kv077145@gmail.com" : admin.Trim();
     }
 
-    public async Task<bool> SendOrderNotificationEmailAsync(OrderDto order, string superAdminEmail)
+    public async Task<(bool Success, string Message, string Details)> SendOrderNotificationEmailAsync(OrderDto order, string superAdminEmail)
     {
         var apiKey = GetApiKey();
         var fromEmail = GetFromEmail();
         var recipientEmail = GetAdminEmail(superAdminEmail);
-        var htmlContent = BuildOrderEmailHtml(order);
 
-        // Development fallback: if no API key is configured, log full email to console
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            _logger.LogInformation("================================================================================");
             _logger.LogInformation("RESEND EMAIL SERVICE (DEV FALLBACK - NO API KEY DETECTED)");
-            _logger.LogInformation("Recipient (Super Admin): {Recipient}", recipientEmail);
-            _logger.LogInformation("Subject: New Order Received - #{OrderNumber}", order.OrderNumber);
-            _logger.LogInformation("Customer: {Customer} ({Email}, {Phone})", order.CustomerName, order.CustomerEmail, order.CustomerPhone);
-            _logger.LogInformation("Delivery: {DeliveryType} | Total: Rs. {Total}", order.DeliveryType, order.TotalAmount);
-            _logger.LogInformation("Items Count: {Count}", order.Items.Count);
-            foreach (var item in order.Items)
-            {
-                _logger.LogInformation("  - {ItemName} x{Qty} @ Rs. {Price} = Rs. {Total}", item.ProductName, item.Quantity, item.UnitPrice, item.TotalPrice);
-            }
-            _logger.LogInformation("================================================================================");
-            return true;
+            return (true, "No API key configured (Dev Fallback)", "Logged to console.");
         }
 
         try
         {
+            var htmlContent = BuildOrderEmailHtml(order);
+            var subjectText = $"New Order #{order.OrderNumber} - Faesthatic Corner";
+
             var payload = new
             {
                 from = fromEmail,
                 to = new[] { recipientEmail },
-                subject = $"New Order #{order.OrderNumber} - {order.CustomerName ?? order.CustomerEmail}",
+                subject = subjectText,
                 html = htmlContent
             };
 
+            var jsonPayload = JsonSerializer.Serialize(payload, JsonOptions);
+
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails")
             {
-                Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+                Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -108,16 +107,16 @@ public class ResendEmailService : IEmailService
             {
                 _logger.LogInformation("Successfully sent order notification email for #{OrderNumber} to {Recipient} via Resend. Response: {Response}",
                     order.OrderNumber, recipientEmail, responseBody);
-                return true;
+                return (true, $"Order email sent to {recipientEmail} via Resend", responseBody);
             }
 
             _logger.LogWarning("Resend API responded with error HTTP {StatusCode}: {ErrorBody}", response.StatusCode, responseBody);
-            return false;
+            return (false, $"Resend API error HTTP {(int)response.StatusCode}", responseBody);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send order email via Resend for #{OrderNumber}", order.OrderNumber);
-            return false;
+            return (false, $"Exception: {ex.Message}", ex.ToString());
         }
     }
 
@@ -158,9 +157,11 @@ public class ResendEmailService : IEmailService
                 html = testHtml
             };
 
+            var jsonPayload = JsonSerializer.Serialize(payload, JsonOptions);
+
             var request = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails")
             {
-                Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+                Content = new StringContent(jsonPayload, Encoding.UTF8, "application/json")
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -191,8 +192,8 @@ public class ResendEmailService : IEmailService
                 <tr>
                     <td style='padding: 10px; border-bottom: 1px solid #e5e7eb;'>{item.ProductName}</td>
                     <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;'>{item.Quantity}</td>
-                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;'>₹{item.UnitPrice:N2}</td>
-                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;'>₹{item.TotalPrice:N2}</td>
+                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;'>Rs. {item.UnitPrice:N2}</td>
+                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;'>Rs. {item.TotalPrice:N2}</td>
                 </tr>");
         }
 
@@ -219,7 +220,7 @@ public class ResendEmailService : IEmailService
         <body style='font-family: Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px; color: #111827;'>
             <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px;'>
                 <div style='border-bottom: 2px solid #3b82f6; padding-bottom: 12px; margin-bottom: 20px;'>
-                    <h2 style='margin: 0; color: #1e40af;'>🎉 New Store Order Received!</h2>
+                    <h2 style='margin: 0; color: #1e40af;'>New Store Order Received!</h2>
                     <p style='margin: 4px 0 0 0; color: #6b7280; font-size: 14px;'>Order Number: <strong>#{order.OrderNumber}</strong></p>
                 </div>
 
@@ -253,22 +254,22 @@ public class ResendEmailService : IEmailService
                 <div style='background-color: #f9fafb; border-radius: 6px; padding: 16px; margin-bottom: 20px;'>
                     <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
                         <span>Subtotal:</span>
-                        <span>₹{order.Subtotal:N2}</span>
+                        <span>Rs. {order.Subtotal:N2}</span>
                     </div>
-                    {(order.DiscountAmount > 0 ? $@"<div style='display: flex; justify-content: space-between; margin-bottom: 4px; color: #16a34a;'><span>Discount:</span><span>-₹{order.DiscountAmount:N2}</span></div>" : "")}
+                    {(order.DiscountAmount > 0 ? $@"<div style='display: flex; justify-content: space-between; margin-bottom: 4px; color: #16a34a;'><span>Discount:</span><span>-Rs. {order.DiscountAmount:N2}</span></div>" : "")}
                     <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
                         <span>Delivery Fee:</span>
-                        <span>{(order.ShippingFee == 0 ? "FREE" : $"₹{order.ShippingFee:N2}")}</span>
+                        <span>{(order.ShippingFee == 0 ? "FREE" : $"Rs. {order.ShippingFee:N2}")}</span>
                     </div>
-                    {(order.TipAmount > 0 ? $@"<div style='display: flex; justify-content: space-between; margin-bottom: 4px;'><span>Tip for Team:</span><span>₹{order.TipAmount:N2}</span></div>" : "")}
+                    {(order.TipAmount > 0 ? $@"<div style='display: flex; justify-content: space-between; margin-bottom: 4px;'><span>Tip for Team:</span><span>Rs. {order.TipAmount:N2}</span></div>" : "")}
                     <div style='display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;'>
                         <span>Grand Total:</span>
-                        <span>₹{order.TotalAmount:N2}</span>
+                        <span>Rs. {order.TotalAmount:N2}</span>
                     </div>
                 </div>
 
                 <div style='text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;'>
-                    <p style='margin: 0;'>Faesthatic Corner · Super Admin Order Notification</p>
+                    <p style='margin: 0;'>Faesthatic Corner - Super Admin Order Notification</p>
                     <p style='margin: 2px 0 0 0;'>Logged into admin dashboard for order processing.</p>
                 </div>
             </div>

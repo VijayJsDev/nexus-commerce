@@ -46,15 +46,57 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet("test-email")]
-    public async Task<IActionResult> TestEmail([FromQuery] string? email)
+    public async Task<IActionResult> TestEmail([FromQuery] string? email, [FromQuery] string? type)
     {
         var target = string.IsNullOrWhiteSpace(email) ? "kv077145@gmail.com" : email;
-        var (success, message, details) = await _emailService.TestEmailDeliveryAsync(target);
+
+        if (type == "order")
+        {
+            var sampleOrder = new OrderDto
+            {
+                OrderNumber = $"FC-{Random.Shared.Next(1000, 9999)}",
+                CustomerName = "Vijay Kumar",
+                CustomerEmail = target,
+                CustomerPhone = "9876543210",
+                DeliveryType = "Pickup",
+                PickupLocation = "Chennai Warehouse - Gandhi Road, Nedungundram, Chennai TN",
+                Subtotal = 16.00m,
+                ShippingFee = 0.00m,
+                TipAmount = 0.80m,
+                TotalAmount = 16.80m,
+                SpecialInstructions = "Test order from diagnostic endpoint",
+                Items = new List<OrderItemDto>
+                {
+                    new()
+                    {
+                        ProductId = 1,
+                        ProductName = "Flower Tape D. Green",
+                        UnitPrice = 16.00m,
+                        Quantity = 1,
+                        TotalPrice = 16.00m
+                    }
+                }
+            };
+
+            var (success, message, details) = await _emailService.SendOrderNotificationEmailAsync(sampleOrder, target);
+            return Ok(new
+            {
+                success,
+                message,
+                details,
+                type = "order_notification",
+                orderNumber = sampleOrder.OrderNumber,
+                targetEmail = target,
+                timestamp = DateTime.UtcNow
+            });
+        }
+
+        var (s, m, d) = await _emailService.TestEmailDeliveryAsync(target);
         return Ok(new
         {
-            success,
-            message,
-            details,
+            success = s,
+            message = m,
+            details = d,
             targetEmail = target,
             timestamp = DateTime.UtcNow
         });
@@ -120,17 +162,14 @@ public class OrdersController : ControllerBase
 
         // Notify Super Admin via Email
         var adminEmail = _configuration["Resend:SuperAdminEmail"] ?? "kv077145@gmail.com";
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await _emailService.SendOrderNotificationEmailAsync(orderDto, adminEmail);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Background error sending order notification email for #{OrderNumber}", orderDto.OrderNumber);
-            }
-        });
+            await _emailService.SendOrderNotificationEmailAsync(orderDto, adminEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending order notification email for #{OrderNumber}", orderDto.OrderNumber);
+        }
 
         return CreatedAtAction(nameof(GetOrderById), new { id = savedOrder.Id }, orderDto);
     }
