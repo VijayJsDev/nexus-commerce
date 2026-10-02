@@ -21,10 +21,9 @@ import { STORAGE_KEYS } from '@/config/constants';
 // ─── Create Instance ─────────────────────────────────────────────
 
 export const apiClient = axios.create({
-  // In development, Vite proxies /api/* to http://localhost:5000.
-  // In production, the Nginx config proxies /api/* to the backend container.
-  // Using a relative base URL works in both environments.
-  baseURL: '/',
+  // Uses VITE_API_URL in production (e.g. Render backend URL).
+  // Falls back to '/' in local dev so Vite proxy forwards to localhost:5000.
+  baseURL: import.meta.env['VITE_API_URL'] || '/',
 
   // Default headers applied to every request
   headers: {
