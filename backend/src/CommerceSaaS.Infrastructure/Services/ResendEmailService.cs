@@ -82,14 +82,17 @@ public class ResendEmailService : IEmailService
         try
         {
             var htmlContent = BuildOrderEmailHtml(order);
-            var subjectText = $"New Order #{order.OrderNumber} - Faesthatic Corner";
+            var textContent = BuildOrderEmailText(order);
+            var subjectText = $"Order #{order.OrderNumber} - {order.CustomerName ?? "Customer"}";
+            var formattedFrom = fromEmail.Contains('<') ? fromEmail : $"Faesthatic Corner <{fromEmail}>";
 
             var payload = new
             {
-                from = fromEmail,
+                from = formattedFrom,
                 to = new[] { recipientEmail },
                 subject = subjectText,
-                html = htmlContent
+                html = htmlContent,
+                text = textContent
             };
 
             var jsonPayload = JsonSerializer.Serialize(payload, JsonOptions);
@@ -149,12 +152,15 @@ public class ResendEmailService : IEmailService
                     <p style='color: #10b981; font-weight: bold;'>If you see this email, Resend is working properly!</p>
                 </div>";
 
+            var formattedFrom = fromEmail.Contains('<') ? fromEmail : $"Faesthatic Corner <{fromEmail}>";
+
             var payload = new
             {
-                from = fromEmail,
+                from = formattedFrom,
                 to = new[] { recipient },
                 subject = "Live Test: Faesthatic Corner Order Notification System",
-                html = testHtml
+                html = testHtml,
+                text = $"Live Test Notification: Faesthatic Corner system is active. Recipient: {recipient} at {DateTime.UtcNow:u}"
             };
 
             var jsonPayload = JsonSerializer.Serialize(payload, JsonOptions);
@@ -183,97 +189,99 @@ public class ResendEmailService : IEmailService
         }
     }
 
+    private static string BuildOrderEmailText(OrderDto order)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"NEW ORDER NOTIFICATION - #{order.OrderNumber}");
+        sb.AppendLine($"Customer: {order.CustomerName} ({order.CustomerEmail})");
+        sb.AppendLine($"Phone: {order.CustomerPhone ?? "Not provided"}");
+        sb.AppendLine($"Delivery: {order.DeliveryType}");
+        if (order.DeliveryType == "Pickup")
+        {
+            sb.AppendLine($"Pickup Location: {order.PickupLocation ?? "Chennai Warehouse"}");
+        }
+        else
+        {
+            sb.AppendLine($"Address: {order.ShippingAddress}, {order.City}, {order.State} - {order.PostalCode}");
+        }
+        sb.AppendLine();
+        sb.AppendLine("ITEMS:");
+        foreach (var item in order.Items)
+        {
+            sb.AppendLine($"- {item.ProductName} x{item.Quantity} @ Rs. {item.UnitPrice:N2} = Rs. {item.TotalPrice:N2}");
+        }
+        sb.AppendLine();
+        sb.AppendLine($"Subtotal: Rs. {order.Subtotal:N2}");
+        if (order.DiscountAmount > 0) sb.AppendLine($"Discount: -Rs. {order.DiscountAmount:N2}");
+        sb.AppendLine($"Delivery Fee: {(order.ShippingFee == 0 ? "FREE" : $"Rs. {order.ShippingFee:N2}")}");
+        if (order.TipAmount > 0) sb.AppendLine($"Tip: Rs. {order.TipAmount:N2}");
+        sb.AppendLine($"TOTAL: Rs. {order.TotalAmount:N2}");
+        return sb.ToString();
+    }
+
     private static string BuildOrderEmailHtml(OrderDto order)
     {
         var itemsHtml = new StringBuilder();
         foreach (var item in order.Items)
         {
             itemsHtml.Append($@"
-                <tr>
-                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb;'>{item.ProductName}</td>
-                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;'>{item.Quantity}</td>
-                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;'>Rs. {item.UnitPrice:N2}</td>
-                    <td style='padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold;'>Rs. {item.TotalPrice:N2}</td>
-                </tr>");
+                <div style='padding: 10px 0; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between;'>
+                    <div>
+                        <strong style='color: #111827;'>{item.ProductName}</strong>
+                        <div style='font-size: 12px; color: #6b7280;'>Qty: {item.Quantity} x Rs. {item.UnitPrice:N2}</div>
+                    </div>
+                    <div style='font-weight: bold; color: #111827;'>Rs. {item.TotalPrice:N2}</div>
+                </div>");
         }
 
         var deliveryDetails = order.DeliveryType == "Pickup"
-            ? $@"<p><strong>Pickup Location:</strong> {order.PickupLocation ?? "Chennai Warehouse (Gandhi Road, Nedungundram, Chennai TN)"}</p>"
-            : $@"<p><strong>Delivery Address:</strong><br />
+            ? $@"<p style='margin: 4px 0;'><strong>Pickup Location:</strong> {order.PickupLocation ?? "Chennai Warehouse (Gandhi Road, Nedungundram, Chennai TN)"}</p>"
+            : $@"<p style='margin: 4px 0;'><strong>Delivery Address:</strong><br />
                  {order.ShippingAddress} {order.Apartment}<br />
                  {order.City}, {order.State} - {order.PostalCode}<br />
                  {order.Country}</p>";
 
         var specialNotes = !string.IsNullOrWhiteSpace(order.SpecialInstructions)
-            ? $@"<div style='background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; margin: 15px 0;'>
+            ? $@"<div style='background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 10px; margin: 15px 0; font-size: 13px;'>
                     <strong>Special Instructions:</strong> {order.SpecialInstructions}
                  </div>"
             : "";
 
         return $@"
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset='utf-8'>
-            <title>New Order #{order.OrderNumber}</title>
-        </head>
-        <body style='font-family: Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px; color: #111827;'>
-            <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px;'>
-                <div style='border-bottom: 2px solid #3b82f6; padding-bottom: 12px; margin-bottom: 20px;'>
-                    <h2 style='margin: 0; color: #1e40af;'>New Store Order Received!</h2>
-                    <p style='margin: 4px 0 0 0; color: #6b7280; font-size: 14px;'>Order Number: <strong>#{order.OrderNumber}</strong></p>
-                </div>
+        <div style='max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px; color: #111827;'>
+            <div style='border-bottom: 2px solid #005bd3; padding-bottom: 12px; margin-bottom: 20px;'>
+                <h2 style='margin: 0; color: #005bd3;'>New Store Order Received</h2>
+                <p style='margin: 4px 0 0 0; color: #6b7280; font-size: 14px;'>Order Number: <strong>#{order.OrderNumber}</strong></p>
+            </div>
 
-                <div style='margin-bottom: 20px;'>
-                    <h3 style='margin-bottom: 8px; font-size: 16px; border-bottom: 1px solid #f3f4f6; padding-bottom: 4px;'>Customer Information</h3>
-                    <p style='margin: 4px 0;'><strong>Name:</strong> {order.CustomerName ?? "Customer"}</p>
-                    <p style='margin: 4px 0;'><strong>Email:</strong> {order.CustomerEmail}</p>
-                    <p style='margin: 4px 0;'><strong>Phone:</strong> {order.CustomerPhone ?? "Not provided"}</p>
-                    <p style='margin: 4px 0;'><strong>Delivery Method:</strong> {order.DeliveryType}</p>
-                    {deliveryDetails}
-                    {specialNotes}
-                </div>
+            <div style='margin-bottom: 20px; font-size: 14px;'>
+                <h3 style='margin: 0 0 8px 0; font-size: 15px; color: #374151;'>Customer Details</h3>
+                <p style='margin: 4px 0;'><strong>Name:</strong> {order.CustomerName ?? "Customer"}</p>
+                <p style='margin: 4px 0;'><strong>Email:</strong> {order.CustomerEmail}</p>
+                <p style='margin: 4px 0;'><strong>Phone:</strong> {order.CustomerPhone ?? "Not provided"}</p>
+                <p style='margin: 4px 0;'><strong>Delivery Method:</strong> {order.DeliveryType}</p>
+                {deliveryDetails}
+                {specialNotes}
+            </div>
 
-                <div style='margin-bottom: 20px;'>
-                    <h3 style='margin-bottom: 8px; font-size: 16px; border-bottom: 1px solid #f3f4f6; padding-bottom: 4px;'>Ordered Products</h3>
-                    <table style='width: 100%; border-collapse: collapse; font-size: 14px;'>
-                        <thead>
-                            <tr style='background-color: #f3f4f6;'>
-                                <th style='padding: 8px; text-align: left;'>Product</th>
-                                <th style='padding: 8px; text-align: center;'>Qty</th>
-                                <th style='padding: 8px; text-align: right;'>Price</th>
-                                <th style='padding: 8px; text-align: right;'>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {itemsHtml}
-                        </tbody>
-                    </table>
-                </div>
+            <div style='margin-bottom: 20px;'>
+                <h3 style='margin: 0 0 8px 0; font-size: 15px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px;'>Items Ordered</h3>
+                {itemsHtml}
+            </div>
 
-                <div style='background-color: #f9fafb; border-radius: 6px; padding: 16px; margin-bottom: 20px;'>
-                    <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
-                        <span>Subtotal:</span>
-                        <span>Rs. {order.Subtotal:N2}</span>
-                    </div>
-                    {(order.DiscountAmount > 0 ? $@"<div style='display: flex; justify-content: space-between; margin-bottom: 4px; color: #16a34a;'><span>Discount:</span><span>-Rs. {order.DiscountAmount:N2}</span></div>" : "")}
-                    <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
-                        <span>Delivery Fee:</span>
-                        <span>{(order.ShippingFee == 0 ? "FREE" : $"Rs. {order.ShippingFee:N2}")}</span>
-                    </div>
-                    {(order.TipAmount > 0 ? $@"<div style='display: flex; justify-content: space-between; margin-bottom: 4px;'><span>Tip for Team:</span><span>Rs. {order.TipAmount:N2}</span></div>" : "")}
-                    <div style='display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 8px;'>
-                        <span>Grand Total:</span>
-                        <span>Rs. {order.TotalAmount:N2}</span>
-                    </div>
-                </div>
-
-                <div style='text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 12px;'>
-                    <p style='margin: 0;'>Faesthatic Corner - Super Admin Order Notification</p>
-                    <p style='margin: 2px 0 0 0;'>Logged into admin dashboard for order processing.</p>
+            <div style='background-color: #f9fafb; border-radius: 6px; padding: 16px; margin-bottom: 20px; font-size: 14px;'>
+                <div style='margin-bottom: 6px; color: #4b5563;'>Subtotal: <strong style='float: right; color: #111827;'>Rs. {order.Subtotal:N2}</strong></div>
+                {(order.DiscountAmount > 0 ? $@"<div style='margin-bottom: 6px; color: #16a34a;'>Discount: <strong style='float: right;'>-Rs. {order.DiscountAmount:N2}</strong></div>" : "")}
+                <div style='margin-bottom: 6px; color: #4b5563;'>Delivery: <strong style='float: right; color: #111827;'>{(order.ShippingFee == 0 ? "FREE" : $"Rs. {order.ShippingFee:N2}")}</strong></div>
+                {(order.TipAmount > 0 ? $@"<div style='margin-bottom: 6px; color: #4b5563;'>Tip: <strong style='float: right; color: #111827;'>Rs. {order.TipAmount:N2}</strong></div>" : "")}
+                <div style='font-size: 16px; font-weight: bold; border-top: 1px solid #e5e7eb; padding-top: 10px; margin-top: 8px; color: #111827;'>
+                    Total: <span style='float: right; color: #005bd3;'>Rs. {order.TotalAmount:N2}</span>
                 </div>
             </div>
-        </body>
-        </html>";
+
+            <div style='text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #f3f4f6; padding-top: 12px;'>
+                <p style='margin: 0;'>Faesthatic Corner · Store Admin Notification</p>
+            </div>
+        </div>";
     }
 }
