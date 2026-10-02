@@ -50,19 +50,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*"))
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-        else
-        {
-            policy.WithOrigins(allowedOrigins)
-                  .SetIsOriginAllowed(_ => true) // Supports Vercel preview domains dynamically
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
+        policy.SetIsOriginAllowed(_ => true) // Dynamically reflects origin (localhost, Vercel, custom domain)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 

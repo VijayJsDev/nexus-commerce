@@ -200,46 +200,12 @@ export function CheckoutPage(): React.JSX.Element {
       setOrderComplete(true);
       clearCart();
     } catch (err: unknown) {
-      // In case of network error or backend connecting, provide reliable fallback
-      console.warn('API submission notice:', err);
-      // Fallback local order for uninterrupted user testing
-      const fallbackOrder: OrderResponse = {
-        id: `mock-${Date.now()}`,
-        orderNumber: `FC-${Math.floor(100000 + Math.random() * 900000)}`,
-        customerEmail: email,
-        customerName: `${effectiveFirstName} ${effectiveLastName}`.trim(),
-        customerPhone: phone,
-        deliveryType: deliveryMode === 'pickup' ? 'Pickup' : 'Ship',
-        shippingAddress: effectiveAddress,
-        apartment,
-        city: city || 'Chennai',
-        state: state || 'Tamil Nadu',
-        postalCode: pinCode || '600048',
-        country,
-        pickupLocation:
-          deliveryMode === 'pickup'
-            ? 'Chennai Warehouse - Gandhi Road, Nedungundram, Chennai TN'
-            : undefined,
-        billingSameAsShipping,
-        tipAmount: currentTip,
-        subtotal,
-        shippingFee,
-        discountAmount,
-        totalAmount: grandTotal,
-        specialInstructions,
-        status: 'Pending Admin Verification',
-        createdAt: new Date().toISOString(),
-        items: items.map((i) => ({
-          productId: i.id,
-          productName: i.name,
-          unitPrice: i.amount,
-          quantity: i.quantity,
-          totalPrice: i.amount * i.quantity,
-        })),
-      };
-      setConfirmedOrder(fallbackOrder);
-      setOrderComplete(true);
-      clearCart();
+      console.error('Failed to submit order to API:', err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Unable to communicate with the store server. Please check your connection and try again.';
+      setSubmissionError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

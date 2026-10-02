@@ -20,10 +20,13 @@ import { STORAGE_KEYS } from '@/config/constants';
 
 // ─── Create Instance ─────────────────────────────────────────────
 
+const rawBaseUrl = import.meta.env['VITE_API_URL'];
+const normalizedBaseUrl = rawBaseUrl ? rawBaseUrl.replace(/\/+$/, '') : '';
+
 export const apiClient = axios.create({
-  // Uses VITE_API_URL in production (e.g. Render backend URL).
+  // Uses normalized VITE_API_URL in production (e.g. Render backend URL).
   // Falls back to '/' in local dev so Vite proxy forwards to localhost:5000.
-  baseURL: import.meta.env['VITE_API_URL'] || '/',
+  baseURL: normalizedBaseUrl || '/',
 
   // Default headers applied to every request
   headers: {
@@ -33,9 +36,6 @@ export const apiClient = axios.create({
 
   // 15 seconds — a generous timeout for SaaS API calls
   timeout: 15_000,
-
-  // Send cookies with cross-origin requests (needed for session-based auth)
-  withCredentials: true,
 });
 
 // ─── Request Interceptor ─────────────────────────────────────────
