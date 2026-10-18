@@ -11,17 +11,14 @@ namespace CommerceSaaS.Api.Controllers;
 [Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
-    private readonly ApplicationDbContext? _context;
-    private readonly IProductRepository _productRepository;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<ProductsController> _logger;
 
     public ProductsController(
-        IServiceProvider serviceProvider,
-        IProductRepository productRepository,
+        ApplicationDbContext context,
         ILogger<ProductsController> logger)
     {
-        _context = serviceProvider.GetService<ApplicationDbContext>();
-        _productRepository = productRepository;
+        _context = context;
         _logger = logger;
     }
 
@@ -32,25 +29,17 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetAllProducts([FromQuery] string tenantId = "faesthatic-corner")
     {
         var normalizedTenantId = tenantId.Trim().ToLowerInvariant();
+        _logger.LogInformation("--> [ProductsController] GetAllProducts called for Tenant: '{TenantId}'", normalizedTenantId);
 
-        if (_context != null)
-        {
-            var dbProducts = await _context.Products
-                .Where(p => p.TenantId == normalizedTenantId && p.IsActive)
-                .OrderBy(p => p.Id)
-                .Select(p => MapToDto(p))
-                .ToListAsync();
+        var dbProducts = await _context.Products
+            .Where(p => p.TenantId == normalizedTenantId && p.IsActive)
+            .OrderBy(p => p.Id)
+            .Select(p => MapToDto(p))
+            .ToListAsync();
 
-            if (dbProducts.Count > 0)
-            {
-                return Ok(dbProducts);
-            }
-        }
+        _logger.LogInformation("--> [ProductsController] Found {Count} active products in DB for Tenant: '{TenantId}'", dbProducts.Count, normalizedTenantId);
 
-        // Fallback to in-memory repository if DB is empty or disconnected
-        var memoryProducts = await _productRepository.GetAllProductsAsync();
-        var dtos = memoryProducts.Select(p => MapToDto(p));
-        return Ok(dtos);
+        return Ok(dbProducts);
     }
 
     /// <summary>
@@ -59,22 +48,13 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProductDto>> GetProductById(int id)
     {
-        if (_context != null)
-        {
-            var dbProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
-            if (dbProduct != null)
-            {
-                return Ok(MapToDto(dbProduct));
-            }
-        }
-
-        var product = await _productRepository.GetProductByIdAsync(id);
-        if (product == null)
+        var dbProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+        if (dbProduct == null)
         {
             return NotFound(new { message = $"Product with ID {id} was not found." });
         }
 
-        return Ok(MapToDto(product));
+        return Ok(MapToDto(dbProduct));
     }
 
     /// <summary>
@@ -116,15 +96,9 @@ public class ProductsController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        if (_context != null)
-        {
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, MapToDto(product));
-        }
-
-        var created = await _productRepository.CreateProductAsync(product);
-        return CreatedAtAction(nameof(GetProductById), new { id = created.Id }, MapToDto(created));
+        _context.Products.Add(product);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, MapToDto(product));
     }
 
     /// <summary>
@@ -138,38 +112,33 @@ public class ProductsController : ControllerBase
             return BadRequest(new { message = "Product name is required." });
         }
 
-        if (_context != null)
+        var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+        if (product == null)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
-            if (product == null)
-            {
-                return NotFound(new { message = $"Product with ID {id} was not found." });
-            }
-
-            product.Name = dto.Name.Trim();
-            if (!string.IsNullOrWhiteSpace(dto.Sku)) product.Sku = dto.Sku.Trim().ToUpperInvariant();
-            product.UnitRate = dto.UnitRate > 0 ? dto.UnitRate : dto.Price;
-            if (dto.EffectiveFrom.HasValue) product.EffectiveFrom = dto.EffectiveFrom.Value;
-            product.MaxDiscount = dto.MaxDiscount ?? product.MaxDiscount;
-            product.CgstRate = dto.CgstRate;
-            product.SgstRate = dto.SgstRate;
-            product.IgstRate = dto.IgstRate;
-            if (!string.IsNullOrWhiteSpace(dto.HsnCode)) product.HsnCode = dto.HsnCode;
-            product.Category = dto.Category;
-            product.CategoryId = dto.CategoryId;
-            product.Uom = dto.Uom;
-            product.UomId = dto.UomId;
-            product.Description = dto.Description;
-            if (!string.IsNullOrWhiteSpace(dto.ImageUrl)) product.ImageUrl = dto.ImageUrl;
-            product.StockQuantity = dto.StockQuantity;
-            product.IsActive = dto.IsActive;
-            product.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            return Ok(MapToDto(product));
+            return NotFound(new { message = $"Product with ID {id} was not found." });
         }
 
-        return NotFound(new { message = $"Product with ID {id} was not found." });
+        product.Name = dto.Name.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.Sku)) product.Sku = dto.Sku.Trim().ToUpperInvariant();
+        product.UnitRate = dto.UnitRate > 0 ? dto.UnitRate : dto.Price;
+        if (dto.EffectiveFrom.HasValue) product.EffectiveFrom = dto.EffectiveFrom.Value;
+        product.MaxDiscount = dto.MaxDiscount ?? product.MaxDiscount;
+        product.CgstRate = dto.CgstRate;
+        product.SgstRate = dto.SgstRate;
+        product.IgstRate = dto.IgstRate;
+        if (!string.IsNullOrWhiteSpace(dto.HsnCode)) product.HsnCode = dto.HsnCode;
+        product.Category = dto.Category;
+        product.CategoryId = dto.CategoryId;
+        product.Uom = dto.Uom;
+        product.UomId = dto.UomId;
+        product.Description = dto.Description;
+        if (!string.IsNullOrWhiteSpace(dto.ImageUrl)) product.ImageUrl = dto.ImageUrl;
+        product.StockQuantity = dto.StockQuantity;
+        product.IsActive = dto.IsActive;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(MapToDto(product));
     }
 
     /// <summary>
@@ -178,19 +147,14 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        if (_context != null)
+        var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+        if (product == null)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
-            if (product == null)
-            {
-                return NotFound(new { message = $"Product with ID {id} was not found." });
-            }
-
-            product.IsActive = false; // Soft delete
-            await _context.SaveChangesAsync();
-            return NoContent();
+            return NotFound(new { message = $"Product with ID {id} was not found." });
         }
 
+        product.IsActive = false; // Soft delete
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 

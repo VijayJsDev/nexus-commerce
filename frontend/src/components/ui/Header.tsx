@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import { SearchIcon, ShoppingBag, User } from 'lucide-react';
+import { ROUTES } from '@/app/router/routes';
 import { ThemeToggle } from './ThemeToggle';
 import { CartDrawer } from './CartDrawer';
 import { useCartStore } from '@/store/cart.store';
@@ -123,21 +125,37 @@ export function Header({
               <ThemeToggle className="origin-right scale-85 [&>span]:hidden" />
             </li>
 
-            {/* User Account Button */}
+            {/* User Account / Merchant Portal Button */}
             <li>
-              <button
-                type="button"
-                aria-label="User Account"
-                onClick={onAccountClick}
-                className={cn(
-                  'text-muted-foreground rounded-full p-2 sm:p-2.5',
-                  'hover:text-foreground hover:bg-accent',
-                  'transition-all duration-200 ease-out active:scale-95',
-                  'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-                )}
-              >
-                <User className="h-5 w-5" aria-hidden="true" />
-              </button>
+              {onAccountClick ? (
+                <button
+                  type="button"
+                  aria-label="User Account"
+                  onClick={onAccountClick}
+                  className={cn(
+                    'text-muted-foreground rounded-full p-2 sm:p-2.5',
+                    'hover:text-foreground hover:bg-accent',
+                    'transition-all duration-200 ease-out active:scale-95',
+                    'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                  )}
+                >
+                  <User className="h-5 w-5" aria-hidden="true" />
+                </button>
+              ) : (
+                <Link
+                  to={ROUTES.ADMIN.ROOT}
+                  aria-label="Merchant Admin Portal"
+                  title="Merchant Admin Portal"
+                  className={cn(
+                    'text-muted-foreground rounded-full p-2 sm:p-2.5',
+                    'hover:text-primary hover:bg-accent',
+                    'transition-all duration-200 ease-out active:scale-95',
+                    'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
+                  )}
+                >
+                  <User className="h-5 w-5" aria-hidden="true" />
+                </Link>
+              )}
             </li>
 
             {/* Shopping Cart Button with Badge */}

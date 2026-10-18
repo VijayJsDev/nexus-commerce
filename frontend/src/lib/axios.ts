@@ -56,6 +56,11 @@ apiClient.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const tenantId = localStorage.getItem('nexus_tenant_id') || 'faesthatic-corner';
+    if (tenantId) {
+      config.headers['X-Tenant-Id'] = tenantId;
+    }
+
     return config;
   },
   (error: unknown) => Promise.reject(error)

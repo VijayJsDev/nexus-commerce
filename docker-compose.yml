@@ -54,8 +54,8 @@ services:
       # Host 3000 → Container 3000 (Vite dev server)
       - "3000:3000"
     environment:
-      # Backend URL inside Docker network (service name as hostname)
-      - VITE_API_URL=http://backend:8080
+      # Browser runs on host machine, so it must reach backend via host-mapped port 5000
+      - VITE_API_URL=http://localhost:5000
       - VITE_APP_NAME=Nexus Commerce
     volumes:
       # Mount source for hot-module replacement (file changes reflect instantly)

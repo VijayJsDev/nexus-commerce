@@ -28,9 +28,18 @@ export const ROUTES = {
     RESET_PASSWORD: '/reset-password',
   },
 
-  // ── App (protected, future) ──────────────────────────────────
-  DASHBOARD: '/dashboard',
-  SETTINGS: '/settings',
+  // ── Tenant Admin ─────────────────────────────────────────────
+  ADMIN: {
+    ROOT: '/admin',
+    LOGIN: '/admin/login',
+    REGISTER: '/admin/register',
+    DASHBOARD: '/admin/dashboard',
+    PRODUCTS: '/admin/products',
+    CATEGORIES: '/admin/products/categories',
+    MEASUREMENTS: '/admin/products/measurements',
+    SETTINGS: '/admin/settings',
+    ORDERS: '/admin/orders',
+  },
 
   // ── Fallback ─────────────────────────────────────────────────
   NOT_FOUND: '*',

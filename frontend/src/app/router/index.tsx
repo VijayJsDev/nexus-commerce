@@ -18,12 +18,23 @@
  *       └── /orders    (OrdersPage)
  */
 
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ROUTES } from './routes';
 import { Header } from '@/components/ui/Header';
 import { HeroCarousel } from '@/components/ui/HeroCarousel';
 import { ProductHorizontalScrolling } from '@/components/ui/ProductHorizontalScrolling';
 import { CheckoutPage } from '@/features/checkout/CheckoutPage';
+
+// Admin Merchant Portal Components
+import { TenantLoginPage } from '@/features/admin/auth/TenantLoginPage';
+import { TenantRegisterPage } from '@/features/admin/auth/TenantRegisterPage';
+import { AdminLayout } from '@/features/admin/layout/AdminLayout';
+import { AdminDashboardPage } from '@/features/admin/dashboard/AdminDashboardPage';
+import { ProductsListPage } from '@/features/admin/products/ProductsListPage';
+import { CategoriesPage } from '@/features/admin/products/CategoriesPage';
+import { MeasurementsPage } from '@/features/admin/products/MeasurementsPage';
+import { OrganizationSettingsPage } from '@/features/admin/settings/OrganizationSettingsPage';
+import { OrdersPage } from '@/features/admin/orders/OrdersPage';
 
 // ─── Placeholder Root Component ───────────────────────────────────
 // Renders a minimal themed page that proves the entire stack is wired:
@@ -49,17 +60,64 @@ function RootPage(): React.JSX.Element {
 // ─── Router Definition ────────────────────────────────────────────
 
 export const router = createBrowserRouter([
+  // ── Public Storefront ─────────────────────────────────────────
   {
     path: ROUTES.ROOT,
     element: <RootPage />,
-    // errorElement: <ErrorBoundaryPage /> — add when building real pages
   },
   {
     path: ROUTES.CHECKOUT,
     element: <CheckoutPage />,
   },
+
+  // ── Tenant Admin Authentication ───────────────────────────────
   {
-    // Catch-all: any unmatched URL shows a 404 page
+    path: ROUTES.ADMIN.LOGIN,
+    element: <TenantLoginPage />,
+  },
+  {
+    path: ROUTES.ADMIN.REGISTER,
+    element: <TenantRegisterPage />,
+  },
+
+  // ── Tenant Merchant Admin Portal (Protected by AdminLayout) ───
+  {
+    path: ROUTES.ADMIN.ROOT,
+    element: <AdminLayout />,
+    children: [
+      {
+        index: true,
+        element: <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: 'products',
+        element: <ProductsListPage />,
+      },
+      {
+        path: 'products/categories',
+        element: <CategoriesPage />,
+      },
+      {
+        path: 'products/measurements',
+        element: <MeasurementsPage />,
+      },
+      {
+        path: 'settings',
+        element: <OrganizationSettingsPage />,
+      },
+      {
+        path: 'orders',
+        element: <OrdersPage />,
+      },
+    ],
+  },
+
+  // ── Fallback 404 ──────────────────────────────────────────────
+  {
     path: ROUTES.NOT_FOUND,
     element: (
       <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-3">
@@ -69,3 +127,4 @@ export const router = createBrowserRouter([
     ),
   },
 ]);
+
