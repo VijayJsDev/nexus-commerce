@@ -4,6 +4,8 @@ public class Order
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string OrderNumber { get; set; } = string.Empty;
+    public string TenantId { get; set; } = "faesthatic-corner";
+    public Tenant? Tenant { get; set; }
     public string CustomerEmail { get; set; } = string.Empty;
     public string? CustomerName { get; set; }
     public string? CustomerPhone { get; set; }
