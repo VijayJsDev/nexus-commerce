@@ -23,6 +23,12 @@ public static class DependencyInjection
         // ─── HTTP Client for Resend Email API ───────────────────────
         services.AddHttpClient<IEmailService, ResendEmailService>();
 
+        // ─── Cloudinary Image Upload Service ────────────────────────
+        services.AddScoped<IImageUploadService, CloudinaryImageUploadService>();
+
+        // ─── Security & Authentication ──────────────────────────────
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
         // ─── Repositories ───────────────────────────────────────────
         services.AddSingleton<IProductRepository, InMemoryProductRepository>();
         services.AddSingleton<IOrderRepository, InMemoryOrderRepository>();
