@@ -12,6 +12,8 @@
 //   5. Run the application
 
 using CommerceSaaS.Infrastructure;
+using CommerceSaaS.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 // ──────────────────────────────────────────────────────────────────
 // SECTION 1: Builder Setup
@@ -110,6 +112,29 @@ app.MapControllers();
 
 // Health check endpoint for cloud load balancers and platform monitors (Koyeb, Render, etc.)
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
+
+// ──────────────────────────────────────────────────────────────────
+// SECTION 4.5: Database Migration & Automated Startup Seeding
+// Runs on application boot: applies pending EF Core migrations and
+// executes the idempotent seeder (similar to `rails db:migrate && rails db:seed`).
+// ──────────────────────────────────────────────────────────────────
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetService<ApplicationDbContext>();
+    if (context != null)
+    {
+        try
+        {
+            await context.Database.MigrateAsync();
+            await DbInitializer.SeedAsync(context);
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred during database migration or seeding.");
+        }
+    }
+}
 
 // ──────────────────────────────────────────────────────────────────
 // SECTION 5: Run
